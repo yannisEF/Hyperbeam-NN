@@ -1,49 +1,57 @@
+import pickle
 import argparse
-from stable_baselines3 import SAC
 
-from utils_sample import *
+import numpy as np
 
-# Prepares for comparison a list of policies from the models entered as parameters
-# python3 preparePolicies.py --inputNames "rl_model_7000_steps; rl_model_8000_steps" --outputName "pendulum_policies_7000_8000_1000"
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
 
-def loadFromFile(filenames, folder):
-	"""Returns a list of policies"""
-	assert len(filenames) == 2
-	return [SAC.load('{}/{}'.format(folder, f)) for f in filenames]
+parser = argparse.ArgumentParser()
+parser.add_argument('--inputFolder', default='Results/', type=str)
+parser.add_argument('--name', default='test_1701445754', type=str)
+args = parser.parse_args()
 
-if __name__ == "__main__":
-	print("Parsing arguments")
-	parser = argparse.ArgumentParser()
+list_to_load = list(range(25))
 
-	parser.add_argument('--inputFolder', default='Models', type=str) # Folder containing the input
-	parser.add_argument('--inputNames', default="rl_model_7000_steps; rl_model_8000_steps", type=str) # Names of every model to load, separated by '; '
+list_layers = []
+for filename in list_to_load:
+    folder = args.inputFolder + '/' + args.name + '/'
+    with open(folder + str(filename) + '.pkl', 'rb') as handle:
+        list_layers.append(pickle.load(handle))
 
-	args = parser.parse_args()
-	
-	print("Retrieving the models..")
-	models = loadFromFile(filenames=args.inputNames.split('; '), folder=args.inputFolder)
-	print("Processing the models' policies..")
-	policies = [model.policy.parameters_to_vector() for model in models]
+v_min, v_max = np.min(list_layers), np.max(list_layers)
 
-	nb_layers = 25
-	nb_lines_per_layer = 50
-	pixels_per_line = 50
+# 2D plot
+fig = plt.figure(figsize=(8,8))
+im=plt.imshow(list_layers[0], interpolation='none', vmin=v_min, vmax=v_max)
 
-	# We have a random vector corresponding to the learning between two policies
-	u = policies[1] - policies[0]
-	# We find the hyperplane orthogonal to that vector
-	basis = get_hyperplane(u)
+axidx1 = plt.axes([0.15, 0.05, 0.70, 0.04])
+slidx1 = Slider(axidx1, 'index', 0, len(list_layers)-1, valinit=0, valfmt='%d', valstep=1)
 
-	# We set up a sampling rule for that hyperplane
-	origin1 = np.zeros(len(u))
-	combination1 = combination_random(len(basis), nb_lines_per_layer)
-	S = sample_around(origin1, basis, combination1)
+def update2D(val):
+    index = int(slidx1.val)
+    im.set_array(list_layers[index])
+slidx1.on_changed(update2D)
 
-	# Now we sample the beam created by shifting our hyperplane by u
-	beam = sample_beam(S, u, nb_layers)
+# 3D plot
+list_layers3D = [layer[::-1] for layer in list_layers]
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111, projection='3d')
 
-	# For each of point, we trace a line to the center of the layer
-	#   ... this is because the hyperplane is N-th dimensional
-	#   ... and we have to use another technique later to visualize
-	#   ... these N dimensions in 2D or 3D.
-	get_landscape_beam(beam, pixels_per_line, save_path="Policies/test")
+X = list(range(len(list_layers3D[0][0])))
+Y = list(range(len(list_layers3D[0])))
+X, Y = np.meshgrid(X, Y)
+
+surf = ax.plot_surface(X, Y, np.array(list_layers3D[0]))
+
+axidx2 = plt.axes([0.15, 0.05, 0.70, 0.04])
+slidx2 = Slider(axidx2, 'index', 0, len(list_layers3D)-1, valinit=0, valfmt='%d', valstep=1)
+def update3D(val):
+    index = int(slidx2.val)
+    ax.clear()
+    ax.plot_surface(X, Y, np.array(list_layers3D[index]))
+    
+    
+slidx2.on_changed(update3D)
+
+plt.show()

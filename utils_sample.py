@@ -1,4 +1,5 @@
-"""Functions used to find and sample hyperplanes orthognal to a vector."""
+"""Functions used to find and sample hyperplanes orthognal to a vector.
+TODO: Needs to be rethought for better data compression."""
 
 import pickle
 import itertools
