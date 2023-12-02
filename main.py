@@ -8,16 +8,11 @@ from matplotlib.widgets import Slider
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--inputFolder', default='Results/', type=str)
-parser.add_argument('--name', default='test_1701445754', type=str)
+parser.add_argument('--name', default='test', type=str)
 args = parser.parse_args()
 
-list_to_load = list(range(25))
-
-list_layers = []
-for filename in list_to_load:
-    folder = args.inputFolder + '/' + args.name + '/'
-    with open(folder + str(filename) + '.pkl', 'rb') as handle:
-        list_layers.append(pickle.load(handle))
+with open(args.inputFolder +  '/' + args.name + '.pkl', 'rb') as handle:
+    list_layers = pickle.load(handle)
 
 v_min, v_max = np.min(list_layers), np.max(list_layers)
 

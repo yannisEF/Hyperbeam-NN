@@ -1,49 +1,131 @@
+"""Saves a sampled beam layer by layer (storage space proportional to policy dimension).
+Example : python3 model_prepare.py"""
+
+import json
 import argparse
-from stable_baselines3 import SAC
+
+import stable_baselines3
+from stable_baselines3.common.evaluation import evaluate_policy
+
+from tqdm import tqdm
+from scoop import futures
 
 from utils_sample import *
+from utils import make_path
 
-# Prepares for comparison a list of policies from the models entered as parameters
-# python3 preparePolicies.py --inputNames "rl_model_7000_steps; rl_model_8000_steps" --outputName "pendulum_policies_7000_8000_1000"
 
-def loadFromFile(filenames, folder):
-	"""Returns a list of policies"""
-	assert len(filenames) == 2
-	return [SAC.load('{}/{}'.format(folder, f)) for f in filenames]
+def run_policy(policies, tuple_model, nb_eval):
+	"""Evaluate a model with given policy."""
+
+	model = tuple_model[0](**tuple_model[1])
+
+	line = []
+	for policy in policies:
+		model.policy.load_from_vector(policy)
+
+		score_mean, score_std = evaluate_policy(
+			model, model.env,
+			n_eval_episodes=nb_eval,
+			warn=False
+		)
+
+		line.append(score_mean)
+
+	return line
+
 
 if __name__ == "__main__":
-	print("Parsing arguments")
+
 	parser = argparse.ArgumentParser()
-
-	parser.add_argument('--inputFolder', default='Models', type=str) # Folder containing the input
-	parser.add_argument('--inputNames', default="rl_model_7000_steps; rl_model_8000_steps", type=str) # Names of every model to load, separated by '; '
-
+	parser.add_argument(
+		'--parameters', default='parameters.json', type=str,
+		help="Path to the json parameters file."
+	)
 	args = parser.parse_args()
+
+	# Retrieving parameters
+	parameters = json.load(open(args.parameters))
+	parameters_training = parameters["training"]
+	parameters_beam = parameters["beam"]
+
+	algorithm = stable_baselines3.__dict__[parameters["algorithm"]]
+
+	input_path = "Models/{}".format(parameters["name_model"])
+	save_path = "Results/{}".format(parameters["name_result"])
 	
-	print("Retrieving the models..")
-	models = loadFromFile(filenames=args.inputNames.split('; '), folder=args.inputFolder)
-	print("Processing the models' policies..")
-	policies = [model.policy.parameters_to_vector() for model in models]
+	# Retrieving the policies
+	print("Retrieving the policies..")
+	policies = [
+		model.policy.parameters_to_vector()
+		for model in [
+			algorithm.load(
+				"{}/{}_{}_steps".format(input_path, parameters["name_model"], name)
+			) for name in sorted(list(parameters_beam["vector"].values()))
+		]
+	]
 
-	nb_layers = 25
-	nb_lines_per_layer = 50
-	pixels_per_line = 50
-
-	# We have a random vector corresponding to the learning between two policies
+	# Computing the beam
+	print("Computing the beam..")
+	# 	We find the vector corresponding to the learning between two policies
 	u = policies[1] - policies[0]
-	# We find the hyperplane orthogonal to that vector
-	basis = get_hyperplane(u)
+	# 	We gather an orthonormal basis for the hyperplane orthogonal to that vector
+	print("Finding hyperplane..")
+	basis = get_hyperplane(u, verbose=True)
 
-	# We set up a sampling rule for that hyperplane
-	origin1 = np.zeros(len(u))
-	combination1 = combination_random(len(basis), nb_lines_per_layer)
-	S = sample_around(origin1, basis, combination1)
+	# 	We set up a sampling rule for that hyperplane
+	print("Sampling original surface..")
+	origin = np.zeros(len(u))
+	combination = combination_random(len(basis), parameters_beam["nb_lines"])
+	S = sample_around(origin, basis, combination)
 
-	# Now we sample the beam created by shifting our hyperplane by u
-	beam = sample_beam(S, u, nb_layers)
+	# 	Now we sample the beam created by shifting our hyperplane by u
+	print("Shifting the surface to to create the beam's layers..")
+	beam = sample_beam(S, u, parameters_beam["nb_layers"])
 
-	# For each of point, we trace a line to the center of the layer
-	#   ... this is because the hyperplane is N-th dimensional
-	#   ... and we have to use another technique later to visualize
-	#   ... these N dimensions in 2D or 3D.
-	get_landscape_beam(beam, pixels_per_line, save_path="Policies/test")
+	# Sampling the beam's layers and evaluating them
+	import warnings	#	Dirty but nicer to remove SCOOP's warnings...
+	warnings.filterwarnings("ignore")
+
+	#	Preparing the models for parallelization
+	dict_model_params = {
+			"policy":parameters["policy"],
+			"env":parameters["environment"],
+			"policy_kwargs":parameters_training["policy_kwargs"]
+	}
+
+	#	Evaluation and sampling loop
+	indices = None
+	list_results = []
+	for layer in tqdm(beam, desc="Layer", position=0):
+
+		# 	We get a landscape by sampling a line to the center of the layer for each point
+		landscape = sample_landscape(layer, parameters_beam["nb_columns"] // 2)
+        
+		# 	Indices will remember a coherent order for each line across layers
+		if indices is None:
+			indices = utils.order_neighbours(landscape)[-1]
+
+		# 	Evaluating each point
+		list_results.append(list(
+			tqdm(
+				futures.map(
+					run_policy,
+					landscape,
+					[(algorithm, dict_model_params)] * len(landscape),
+					[parameters_beam["nb_episodes_per_eval"]] * len(landscape),
+				),
+				desc="Line", position=1, leave=False, total=len(landscape)
+			)
+		))
+	
+	#	Now that all is done, we order the landscapes coherently
+	print("Re-organizing lines")
+	list_ordered_results = list(map(
+		lambda x: utils.insert_with_indices(x, indices),
+		list_results
+	))
+	
+	# Saving results
+	print("Saving results")
+	with open("{}.pkl".format(save_path), 'wb') as handle:
+		pickle.dump(list_ordered_results, handle)

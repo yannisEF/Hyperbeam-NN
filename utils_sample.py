@@ -5,6 +5,8 @@ import pickle
 import itertools
 import numpy as np
 
+from tqdm import tqdm
+
 import utils
 
 # ------------------------------- Orthogonalization -------------------------------
@@ -22,16 +24,19 @@ def get_orthogonal(u):
     v = 2 * (np.random.random(u.size) - .5)
     return np.matmul(u.T, u) * v - np.matmul(v.T, u) * u
 
-def get_hyperplane(u):
+def get_hyperplane(u, verbose=False):
     """Returns an orthonormal basis of the hyperplane orthogonal to u using the Gram-Schmidt procedure."""
 
     # Get a random family of N-1 vectors orthogonal to u
     #   ...we assume that this is a linearly dependent set...
     list_v = [get_orthogonal(u) for _ in range(u.size-1)]
 
+    iterator = tqdm(range(len(list_v)-1), desc="Hyperplane basis") if verbose is True \
+        else range(len(list_v)-1)
+
     # Gram-Schmidt
     basis = [list_v[0]]
-    for k in range(len(list_v)-1):
+    for k in iterator:
         projection = sum([get_projection(basis[j], list_v[k+1]) for j in range(k+1)])
         basis.append(list_v[k+1] - projection)
 
@@ -109,12 +114,7 @@ def get_landscape_beam(beam, pixels_per_line, save_path=None):
     lines by closest neighbours.
 
     This can take a lot of RAM, hence if save_path is not None data is saved layer by layer and RAM freed in the desired path.
-    """
-
-    if save_path is not None:
-        timestamp = utils.get_timestamp()
-        basename = "{}_{}".format(save_path, timestamp)
-        utils.make_path(basename)        
+    """    
 
     list_ordered_landscapes = []
 
@@ -133,7 +133,7 @@ def get_landscape_beam(beam, pixels_per_line, save_path=None):
 
         # We save the data or keep it in memory
         if save_path is not None:
-            with open("{}/{}.pkl".format(basename, i), 'wb') as handle:
+            with open("{}/{}.pkl".format(save_path, i), 'wb') as handle:
                 pickle.dump(ordered_landscape, handle)
         else:
             list_ordered_landscapes.append(ordered_landscape)   
