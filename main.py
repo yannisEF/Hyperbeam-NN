@@ -44,7 +44,6 @@ if __name__=="__main__":
     with open('Results/{}.pkl'.format(args.to_show), 'rb') as handle:
         list_layers = pickle.load(handle)
 
-
     colormap = cm.viridis
 
     slider_position = [0.15, 0.05, 0.70, 0.04]

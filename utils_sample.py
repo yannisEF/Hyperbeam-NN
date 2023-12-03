@@ -144,7 +144,7 @@ def get_landscape_beam(beam, pixels_per_line, save_path=None):
 
 if __name__=="__main__":
 
-    dimension = 1000
+    dimension = 3
 
     nb_layers = 25
     nb_lines_per_layer = 50
@@ -153,7 +153,7 @@ if __name__=="__main__":
     # Use 3D for visualization
     if dimension == 3:
         nb_layers = 3
-        nb_lines_per_layer = 25
+        nb_lines_per_layer = 5
         pixels_per_line = 6
 
     # We have a random vector corresponding to the learning between two policies
