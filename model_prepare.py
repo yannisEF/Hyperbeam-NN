@@ -1,5 +1,5 @@
 """Saves a sampled beam layer by layer (storage space proportional to policy dimension).
-Example : python3 model_prepare.py"""
+Example : python3 -m scoop model_prepare.py"""
 
 import json
 import argparse
@@ -11,7 +11,6 @@ from tqdm import tqdm
 from scoop import futures
 
 from utils_sample import *
-from utils import make_path
 
 
 def run_policy(policies, tuple_model, nb_eval):
@@ -41,6 +40,10 @@ if __name__ == "__main__":
 		'--parameters', default='parameters.json', type=str,
 		help="Path to the json parameters file."
 	)
+	parser.add_argument(
+		'--parallel', default='True', type=str,
+		help="Should the execution be parallelized?"
+	)
 	args = parser.parse_args()
 
 	# Retrieving parameters
@@ -52,7 +55,10 @@ if __name__ == "__main__":
 
 	input_path = "Models/{}".format(parameters["name_model"])
 	save_path = "Results/{}".format(parameters["name_result"])
-	
+
+	map_func = futures.map if bool(args.parallel.lower() == "true") is True \
+		else map
+		
 	# Retrieving the policies
 	print("Retrieving the policies..")
 	policies = [
@@ -73,8 +79,9 @@ if __name__ == "__main__":
 	basis = get_hyperplane(u, verbose=True)
 
 	# 	We set up a sampling rule for that hyperplane
+	# TODO: Think about appropriate sampling rule
 	print("Sampling original surface..")
-	origin = np.zeros(len(u))
+	origin = policies[0]
 	combination = combination_random(len(basis), parameters_beam["nb_lines"])
 	S = sample_around(origin, basis, combination)
 
@@ -108,7 +115,7 @@ if __name__ == "__main__":
 		# 	Evaluating each point
 		list_results.append(list(
 			tqdm(
-				futures.map(
+				map_func(
 					run_policy,
 					landscape,
 					[(algorithm, dict_model_params)] * len(landscape),

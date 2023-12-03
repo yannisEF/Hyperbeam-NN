@@ -88,7 +88,7 @@ def sample_landscape(L, N):
     """
     Returns the sampled lines from the center to every point of the layer.
     By ordering the lines in a consistent manner, we get the floor of a landscape.
-    Each line will be made of 2*N pixels.
+    Each line will be made of 2*N + 1 pixels.
     """
 
     landscape = []
@@ -98,7 +98,7 @@ def sample_landscape(L, N):
         # Get the direction from the center to the point
         vector = point - center
         # Sample this direction, towards and away from the point
-        sampled_direction = sample_vector(-vector, N)[::-1] + sample_vector(vector, N)[1:]
+        sampled_direction = sample_vector(-vector, N+1)[::-1] + sample_vector(vector, N+1)[1:]
 
         landscape.append(np.array([
             center + vector_shift 
