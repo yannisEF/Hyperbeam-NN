@@ -21,8 +21,9 @@ def get_orthogonal(u):
     if len(u.shape) > 1:
         raise ValueError("Input not a vector.")
     
-    v = 2 * (np.random.random(u.size) - .5)
-    return np.matmul(u.T, u) * v - np.matmul(v.T, u) * u
+    v = np.random.uniform(low=-1, high=1, size=u.size)
+    result = np.matmul(u.T, u) * v - np.matmul(v.T, u) * u
+    return result
 
 def get_hyperplane(u, verbose=False):
     """Returns an orthonormal basis of the hyperplane orthogonal to u using the Gram-Schmidt procedure."""
@@ -43,22 +44,10 @@ def get_hyperplane(u, verbose=False):
     # Normalizing
     return np.array([b / np.linalg.norm(b) for b in basis])
 
-# ------------------------------- Plane sampling -------------------------------
+# ------------------------------- Plane sampling - Utils -------------------------------
 
-def combination_square(dim, r):
-    """Returns a discretized square of size r in N dimensions."""
-    return list(itertools.product(*[range(-r,r+1) for _ in range(dim)]))
-
-def combination_random(dim, N):
-    """Returns N random combinations."""
-    return 2 * (np.random.random((N,dim)) - .5)
-
-def combination_normal(dim, sigma, N):
-    """Returns N random normal combinations."""
-    return list([np.random.normal(scale=sigma, size=dim) for _ in range(N)])
-
-def sample_around(x, basis, combination):
-    """Returns an array of points sampled around x by combining the basis vectors in the desired way. The center X is always at the first index."""
+def center_around(x, basis, combination):
+    """Returns an array of points centered around x by combining the basis vectors in the desired way. The center X is always at the first index."""
     
     S = [x]
     for c in combination:
@@ -73,16 +62,40 @@ def sample_around(x, basis, combination):
 
     return np.array(S)
 
-def sample_vector(u, N):
-    """Returns N samples along vector u."""
+def vector_uniform(u, N):
+    """Returns N uniformly spaced points along vector u."""
     return [k * u for k in np.linspace(0, 1, num=N)]
 
 def sample_beam(S, u, N):
     """Returns N layers of a beam, from a surface S shifted by vector u."""
     return [
         np.array([surface_sample + layer_shift for surface_sample in S])
-        for layer_shift in sample_vector(u, N)
+        for layer_shift in vector_uniform(u, N)
     ]
+
+# ------------------------------- Plane sampling -------------------------------
+
+def combination_square(dim, r):
+    """Returns a discretized square of size r in N dimensions."""
+    return list(itertools.product(*[range(-r,r+1) for _ in range(dim)]))
+
+def combination_random(dim, N):
+    """Returns N random combinations."""
+    return 2 * (np.random.random((N,dim)) - .5)
+
+def combination_normal(dim, sigma, N):
+    """Returns N random normal combinations."""
+    return list([np.random.normal(scale=sigma, size=dim) for _ in range(N)])
+
+def combination_sphere(dim, size, N):
+    """Returns N uniform random samples of the sphere of radius size."""
+    return [
+        size * s / np.linalg.norm(s) for s in combination_normal(dim, 1, N)
+    ]
+
+def vector_boxmuller(N, dim):
+    """Returns N points sampled using Box-Muller sampling rule of dim-dimensional balls."""
+    return [0] + sorted(list(np.random.random(N-1) ** (1/dim)))
 
 def sample_landscape(L, N):
     """
@@ -94,11 +107,14 @@ def sample_landscape(L, N):
     landscape = []
 
     center = L[0]
+    dim = len(center)
+
     for point in L[1:]:
-        # Get the direction from the center to the point
-        vector = point - center
         # Sample this direction, towards and away from the point
-        sampled_direction = sample_vector(-vector, N+1)[::-1] + sample_vector(vector, N+1)[1:]
+        centered_point = point - center
+        dir_towards = [-v * centered_point for v in vector_boxmuller(N+1, dim-1)[::-1]]
+        dir_away = [v * centered_point for v in vector_boxmuller(N+1, dim-1)[1:]]
+        sampled_direction = dir_towards + dir_away
 
         landscape.append(np.array([
             center + vector_shift 
@@ -151,25 +167,30 @@ if __name__=="__main__":
     pixels_per_line = 50
 
     # Use 3D for visualization
+    #   /!\ The ax XYZ limits can change the perception of angles and ditances
     if dimension == 3:
         nb_layers = 3
-        nb_lines_per_layer = 5
+        nb_lines_per_layer = 20
         pixels_per_line = 6
 
     # We have a random vector corresponding to the learning between two policies
-    u = np.random.random(dimension)
+    u = 3 * np.random.random(dimension)
     # We find the hyperplane orthogonal to that vector
     basis = get_hyperplane(u)
 
     # We set up a sampling rule for that hyperplane
     origin1 = np.zeros(len(u))
     combination1 = combination_random(len(basis), nb_lines_per_layer)
-    S1 = sample_around(origin1, basis, combination1)
+    S1 = center_around(origin1, basis, combination1)
 
     #   ... for the example, we show other sampling rules
     origin2 = 3 * np.eye(len(u))[0]
-    combination2 = combination_normal(len(basis), .1, nb_lines_per_layer)
-    S2 = sample_around(origin2, basis, combination2)
+    combination2 = combination_sphere(
+        len(basis),
+        np.linalg.norm(u)/nb_layers,
+        nb_lines_per_layer
+    )
+    S2 = center_around(origin2, basis, combination2)
 
     # Now we sample the beam created by shifting our hyperplane by u
     beam1 = sample_beam(S1, u, nb_layers)

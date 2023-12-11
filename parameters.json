@@ -19,18 +19,18 @@
         }
     },
 
-    "name_result":"all",
+    "name_result":"test",
     "beam":
     {
         "vector":
         {
-            "start":1000,
-            "end":40000
+            "start":30000,
+            "end":31000
         },
 
-        "nb_layers":50,
-        "nb_lines":100,
-        "nb_columns":100,
+        "nb_layers":3,
+        "nb_lines":50,
+        "nb_columns":50,
 
         "nb_episodes_per_eval":5
     }

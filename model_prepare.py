@@ -1,5 +1,8 @@
 """Saves a sampled beam layer by layer (storage space proportional to policy dimension).
-Example : python3 -m scoop model_prepare.py"""
+Example : python3 -m scoop model_prepare.py
+
+There appears to be an issue with scoop that can make the program exit silently during evaluation. In such case, try lowering the number of workers.
+Example : python3 -m -n 5 scoop model_prepare.py"""
 
 import json
 import argparse
@@ -24,8 +27,7 @@ def run_policy(policies, tuple_model, nb_eval):
 
 		score_mean, score_std = evaluate_policy(
 			model, model.env,
-			n_eval_episodes=nb_eval,
-			warn=False
+			n_eval_episodes=nb_eval
 		)
 
 		line.append(score_mean)
@@ -82,16 +84,20 @@ if __name__ == "__main__":
 	# TODO: Think about appropriate sampling rule
 	print("Sampling original surface..")
 	origin = policies[0]
-	combination = combination_random(len(basis), parameters_beam["nb_lines"])
-	S = sample_around(origin, basis, combination)
+	combination = combination_sphere(
+		len(basis),
+		np.linalg.norm(u) / parameters_beam["nb_layers"],
+		parameters_beam["nb_lines"]
+	)
+	S = center_around(origin, basis, combination)
 
 	# 	Now we sample the beam created by shifting our hyperplane by u
 	print("Shifting the surface to to create the beam's layers..")
 	beam = sample_beam(S, u, parameters_beam["nb_layers"])
 
 	# Sampling the beam's layers and evaluating them
-	import warnings	#	Dirty but nicer to remove SCOOP's warnings...
-	warnings.filterwarnings("ignore")
+	# import warnings	#	Dirty but nicer to remove SCOOP's warnings...
+	# warnings.filterwarnings("ignore")
 
 	#	Preparing the models for parallelization
 	dict_model_params = {
@@ -107,7 +113,7 @@ if __name__ == "__main__":
 
 		# 	We get a landscape by sampling a line to the center of the layer for each point
 		landscape = sample_landscape(layer, parameters_beam["nb_columns"] // 2)
-        
+
 		# 	Indices will remember a coherent order for each line across layers
 		if indices is None:
 			indices = utils.order_neighbours(landscape)[-1]
