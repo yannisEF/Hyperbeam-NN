@@ -11,14 +11,17 @@ import utils
 
 # ------------------------------- Orthogonalization -------------------------------
 
-def get_orthogonal(u):
+def get_orthogonal(u, u_dot=None):
     """Returns a random vector orthogonal from u."""
 
     if len(u.shape) > 1:
         raise ValueError("Input not a vector.")
+
+    if u_dot is None:
+        u_dot = np.dot(u, u)
     
     v = np.random.uniform(low=-1, high=1, size=u.size)
-    result = np.matmul(u.T, u) * v - np.matmul(v.T, u) * u
+    result = u_dot * v - np.dot(v, u) * u
     return result
 
 def get_hyperplane(u, verbose=False):
@@ -30,12 +33,13 @@ def get_hyperplane(u, verbose=False):
         else range(plane_dim-1)
 
     # Gram-Schmidt
-    start_vector = get_orthogonal(u)
+    u_dot = np.dot(u, u)
+    start_vector = get_orthogonal(u, u_dot)
     basis = [(start_vector, np.dot(start_vector, start_vector))]
     for _ in iterator:
         # Generate N-1 random vector orthogonal to u
         # ...we assume that we end up with a linearly independent set...
-        new_vector = get_orthogonal(u)
+        new_vector = get_orthogonal(u, u_dot)
 
         # Remove the projection on its family
         vect = new_vector - np.sum(
