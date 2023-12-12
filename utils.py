@@ -6,28 +6,10 @@ from time import time
 
 # ------------------------------- Others -------------------------------
 
-def timing(f):
-    @wraps(f)
-    def wrap(*args, **kw):
-        ts = time()
-        result = f(*args, **kw)
-        te = time()
-        print('func:%r took: %2.9f sec' % \
-        (f.__name__, te-ts))
-        return result
-    return wrap
-
-def get_timestamp():
-    return int(time())
-
 def make_path(path):
     pathlib.Path.mkdir(pathlib.Path(path), parents=True, exist_ok=True)
 
 # ------------------------------- Vectors -------------------------------
-
-def distance_euclidian(x, y):
-    """Returns the euclidian distance between x and y."""
-    return np.linalg.norm(np.array(x)-np.array(y))
 
 def order_neighbours(list_vectors):
     """
@@ -40,10 +22,10 @@ def order_neighbours(list_vectors):
     for vector in list_vectors[1:]:
 
         # Compute the distance to the already ordered vectors
-        distance_to_others = list(map(
-            lambda other: distance_euclidian(vector, other),
-            ordered_vectors
-        ))
+        distance_to_others = [
+            np.linalg.norm(np.array(vector) - np.array(other))
+            for other in ordered_vectors
+        ]
 
         # Get the average distance 
         #   ... (using the minimum distance can easily break the already ordered vectors)

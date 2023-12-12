@@ -7,6 +7,7 @@ import stable_baselines3
 
 import gymnasium as gym
 
+from pathlib import Path
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback, CallbackList
 
 from utils import make_path
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     parameters = json.load(open(args.parameters))
     parameters_training = parameters["training"]
 
-    save_path = "Models/{}".format(parameters["name_model"])
+    save_path = Path(f"Models/{parameters['name_model']}")
     make_path(save_path)
 
     # Initializing the model and its evaluation environment

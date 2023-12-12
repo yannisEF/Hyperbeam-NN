@@ -2,9 +2,11 @@
 TODO: Needs to be rethought for better data compression."""
 
 import pickle
-import itertools
 import numpy as np
 
+from multiprocessing import Pool, cpu_count
+
+from scipy.stats import truncnorm
 from tqdm import tqdm
 
 import utils
@@ -28,20 +30,23 @@ def get_orthogonal(u):
 def get_hyperplane(u, verbose=False):
     """Returns an orthonormal basis of the hyperplane orthogonal to u using the Gram-Schmidt procedure."""
 
-    # Get a random family of N-1 vectors orthogonal to u
-    #   ...we assume that this is a linearly dependent set...
-    list_v = [get_orthogonal(u) for _ in range(u.size-1)]
-
-    iterator = tqdm(range(len(list_v)-1), desc="Hyperplane basis") if verbose is True \
-        else range(len(list_v)-1)
+    # Hyperplane (dimension N-1)
+    plane_dim = u.size - 1
+    iterator = tqdm(range(plane_dim-1), desc="Hyperplane basis") if verbose is True \
+        else range(plane_dim-1)
 
     # Gram-Schmidt
-    basis = [list_v[0]]
-    for k in iterator:
-        projection = sum([get_projection(basis[j], list_v[k+1]) for j in range(k+1)])
-        basis.append(list_v[k+1] - projection)
+    basis = [get_orthogonal(u)]
+    for _ in iterator:
+        # Generate N-1 random vector orthogonal to u
+        # ...we assume that this is a linearly independent set...
+        new_vector = get_orthogonal(u)
+        projections = [get_projection(b, new_vector) for b in basis]
 
-    # Normalizing
+        # Remove the projection on its family
+        basis.append(new_vector - sum(projections))
+
+    # Normalize
     return np.array([b / np.linalg.norm(b) for b in basis])
 
 # ------------------------------- Plane sampling - Utils -------------------------------
@@ -62,22 +67,14 @@ def center_around(x, basis, combination):
 
     return np.array(S)
 
-def vector_uniform(u, N):
-    """Returns N uniformly spaced points along vector u."""
-    return [k * u for k in np.linspace(0, 1, num=N)]
-
 def sample_beam(S, u, N):
     """Returns N layers of a beam, from a surface S shifted by vector u."""
     return [
-        np.array([surface_sample + layer_shift for surface_sample in S])
-        for layer_shift in vector_uniform(u, N)
+        np.array([surface_sample + k * u for surface_sample in S])
+        for k in np.linspace(0, 1, num=N)
     ]
 
 # ------------------------------- Plane sampling -------------------------------
-
-def combination_square(dim, r):
-    """Returns a discretized square of size r in N dimensions."""
-    return list(itertools.product(*[range(-r,r+1) for _ in range(dim)]))
 
 def combination_random(dim, N):
     """Returns N random combinations."""
@@ -96,8 +93,9 @@ def combination_sphere(dim, size, N):
 def vector_boxmuller(N, dim):
     """Returns N points sampled using Box-Muller sampling rule of dim-dimensional balls."""
     # return [0] + sorted(list(np.random.random(N-1) ** (1/dim)))
-    r = np.random.normal(scale=1, size=N-1)
-    return [0] + sorted(list((abs(r) / np.linalg.norm(r))))
+    # r = np.random.normal(scale=1, size=N-1)
+    r = truncnorm.rvs(0,3, size=N-1) / 3 # Hard coding values for fun
+    return [0] + list(np.sort(np.abs(r)))
 
 def sample_landscape(L, N):
     """
@@ -127,6 +125,10 @@ def sample_landscape(L, N):
 
 def get_landscape_beam(beam, pixels_per_line, save_path=None):
     """
+
+    NOT OPTIMIZED EXAMPLE
+    see model_prepare.py for better implementation
+
     For each layer of a bream, we sample the resulting landscape.
     For a consistent vizualisation of underlying structures, we organize the landscape's
     lines by closest neighbours.
@@ -172,8 +174,8 @@ if __name__=="__main__":
     #   /!\ The ax XYZ limits can change the perception of angles and ditances
     if dimension == 3:
         nb_layers = 3
-        nb_lines_per_layer = 20
-        pixels_per_line = 50
+        nb_lines_per_layer = 50
+        pixels_per_line = 6
 
     # We have a random vector corresponding to the learning between two policies
     u = 3 * np.random.random(dimension)

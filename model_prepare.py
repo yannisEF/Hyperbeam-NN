@@ -7,6 +7,7 @@ import json
 import argparse
 import torch.multiprocessing as mp
 
+from pathlib import Path
 from stable_baselines3 import __dict__ as sb3_dict
 from stable_baselines3.common.evaluation import evaluate_policy
 
@@ -49,8 +50,8 @@ if __name__ == "__main__":
 
 	algorithm = sb3_dict[parameters["algorithm"]]
 
-	input_path = "Models/{}".format(parameters["name_model"])
-	save_path = "Results/{}".format(parameters["name_result"])
+	input_path = Path(f"Models/{parameters['name_model']}")
+	save_path = Path(f"Results/{parameters['name_result']}")
 
 	# Retrieving the policies
 	print("Retrieving the policies..")
@@ -58,8 +59,8 @@ if __name__ == "__main__":
 		model.policy.parameters_to_vector()
 		for model in [
 			algorithm.load(
-				"{}/{}_{}_steps".format(input_path, parameters["name_model"], name)
-			) for name in sorted(list(parameters_beam["vector"].values()))
+				f"{input_path}/{input_path.name}_{subname}_steps"
+			) for subname in sorted(list(parameters_beam["vector"].values()))
 		]
 	]
 
@@ -132,5 +133,5 @@ if __name__ == "__main__":
 	
 	# Saving results
 	print("Saving results")
-	with open("{}.pkl".format(save_path), 'wb') as handle:
+	with open(f"{save_path}.pkl", 'wb') as handle:
 		pickle.dump(list_ordered_results, handle)

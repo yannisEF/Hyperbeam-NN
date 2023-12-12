@@ -57,11 +57,21 @@ def update_surface(val, ax, X, Y, list_surfaces, slider, slider_blur=None, kwarg
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--to_show', default='test', type=str)
+    parser.add_argument(
+        '--to_show', default='test', type=str,
+        help="Name of the .pkl file to load."
+    )
+    parser.add_argument(
+        '--transposed', default='False', type=str,
+        help="Should the beam be transposed? true/false"
+    )
     args = parser.parse_args()
 
-    with open('Results/{}.pkl'.format(args.to_show), 'rb') as handle:
-        list_layers = pickle.load(handle)
+    with open(f'Results/{args.to_show}.pkl', 'rb') as handle:
+        list_layers = np.array(pickle.load(handle))
+
+    if args.transposed.lower() == 'true':
+        list_layers = list_layers.T
 
     colormap = cm.viridis
 
