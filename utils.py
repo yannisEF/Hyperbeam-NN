@@ -1,10 +1,12 @@
 import pathlib
 import numpy as np
 
-from functools import wraps
 from time import time
 
 # ------------------------------- Others -------------------------------
+
+def get_timestamp():
+    return str(int(time()))[-5:]
 
 def make_path(path):
     pathlib.Path.mkdir(pathlib.Path(path), parents=True, exist_ok=True)

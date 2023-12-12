@@ -78,7 +78,8 @@ if __name__ == "__main__":
 	origin = policies[0]
 	combination = combination_sphere(
 		len(basis),
-		np.linalg.norm(u) / parameters_beam["nb_layers"],
+		# np.linalg.norm(u) / parameters_beam["nb_layers"], # TODO: test ranges
+		100,
 		parameters_beam["nb_lines"]
 	)
 	S = center_around(origin, basis, combination)
@@ -99,31 +100,38 @@ if __name__ == "__main__":
 	}
 
 	#	Evaluation and sampling loop
+	aborted = False
 	indices = None
 	list_results = []
-	for layer in tqdm(beam, desc="Layer", position=0):
+	try:
+		for layer in tqdm(beam, desc="Layer", position=0):
 
-		# 	We get a landscape by sampling a line to the center of the layer for each point
-		landscape = sample_landscape(layer, parameters_beam["nb_columns"] // 2)
+			# 	We get a landscape by sampling a line to the center of the layer for each point
+			landscape = sample_landscape(layer, parameters_beam["nb_columns"] // 2)
 
-		# 	Indices will remember a coherent order for each line across layers
-		if indices is None:
-			indices = utils.order_neighbours(landscape)[-1]
+			# 	Indices will remember a coherent order for each line across layers
+			if indices is None:
+				indices = utils.order_neighbours(landscape)[-1]
 
-		# 	Evaluating each point
-		landscape = iter(landscape)
-		with mp.Pool(processes=mp.cpu_count()) as pool:
-			list_results.append(pool.starmap(
-				run_policy,
-				[
-					(
-						iter(line),
-						(algorithm, dict_model_params),
-						parameters_beam["nb_episodes_per_eval"]
-					) for line in landscape
-				]
-			))
-	
+			# 	Evaluating each point
+			landscape = iter(landscape)
+			with mp.Pool(processes=mp.cpu_count()) as pool:
+				result = pool.starmap(
+					run_policy,
+					[
+						(
+							iter(line),
+							(algorithm, dict_model_params),
+							parameters_beam["nb_episodes_per_eval"]
+						) for line in landscape
+					]
+				)
+			list_results.append(result)
+
+	except KeyboardInterrupt:
+		print("Interrupting...")
+		aborted = True
+
 	#	Now that all is done, we order the landscapes coherently
 	print("Re-organizing lines")
 	list_ordered_results = list(map(
@@ -132,6 +140,11 @@ if __name__ == "__main__":
 	))
 	
 	# Saving results
-	print("Saving results")
+	if aborted is True:
+		save_path = Path(f'{save_path}_{utils.get_timestamp()}')
+		print(f"Saving aborted run in {save_path}...")
+	else:
+		print((f"Saving results in {save_path}..."))
+		
 	with open(f"{save_path}.pkl", 'wb') as handle:
 		pickle.dump(list_ordered_results, handle)

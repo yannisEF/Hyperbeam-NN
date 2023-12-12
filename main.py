@@ -79,7 +79,7 @@ if __name__=="__main__":
     slider_kwargs = {
         "label":"Depth",
         "valmin":0, "valmax":len(list_layers)-1,
-        "valinit":0, "valstep":.1 , "valfmt":'%f'        
+        "valinit":0, "valstep":.1 , "valfmt":'%d'        
     }
 
     slider_blur_position = [0.15, 0.01, 0.70, 0.04]
