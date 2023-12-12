@@ -4,8 +4,6 @@ TODO: Needs to be rethought for better data compression."""
 import pickle
 import numpy as np
 
-from multiprocessing import Pool, cpu_count
-
 from scipy.stats import truncnorm
 from tqdm import tqdm
 
@@ -41,7 +39,7 @@ def get_hyperplane(u, verbose=False):
 
         # Remove the projection on its family
         vect = new_vector - np.sum(
-            np.dot(new_vector, b[0]) * b[0] / b[1]
+            np.dot(new_vector, b[0] / b[1]) * b[0] 
             for b in basis
         )
 
