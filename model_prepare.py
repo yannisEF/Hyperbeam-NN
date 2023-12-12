@@ -77,7 +77,7 @@ if __name__ == "__main__":
 	origin = policies[0]
 	combination = combination_sphere(
 		len(basis),
-		np.linalg.norm(u),
+		np.linalg.norm(u) / parameters_beam["nb_layers"],
 		parameters_beam["nb_lines"]
 	)
 	S = center_around(origin, basis, combination)
