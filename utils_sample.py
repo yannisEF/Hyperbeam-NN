@@ -13,10 +13,6 @@ import utils
 
 # ------------------------------- Orthogonalization -------------------------------
 
-def get_projection(u,v):
-    """Returns the projection of v on u."""
-    return np.dot(u,v) * u / np.dot(u,u)
-
 def get_orthogonal(u):
     """Returns a random vector orthogonal from u."""
 
@@ -36,18 +32,23 @@ def get_hyperplane(u, verbose=False):
         else range(plane_dim-1)
 
     # Gram-Schmidt
-    basis = [get_orthogonal(u)]
+    start_vector = get_orthogonal(u)
+    basis = [(start_vector, np.dot(start_vector, start_vector))]
     for _ in iterator:
         # Generate N-1 random vector orthogonal to u
-        # ...we assume that this is a linearly independent set...
+        # ...we assume that we end up with a linearly independent set...
         new_vector = get_orthogonal(u)
-        projections = [get_projection(b, new_vector) for b in basis]
 
         # Remove the projection on its family
-        basis.append(new_vector - sum(projections))
+        vect = new_vector - np.sum(
+            np.dot(new_vector, b[0]) * b[0] / b[1]
+            for b in basis
+        )
 
+        basis.append((vect, np.dot(vect, vect)))
+    
     # Normalize
-    return np.array([b / np.linalg.norm(b) for b in basis])
+    return np.array([b[0] / np.sqrt(b[1]) for b in basis])
 
 # ------------------------------- Plane sampling - Utils -------------------------------
 
