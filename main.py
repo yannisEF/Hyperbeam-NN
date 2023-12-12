@@ -12,26 +12,45 @@ from matplotlib.widgets import Slider
 from scipy.ndimage import gaussian_filter
 
 
-def update_image(val, im, slider, slider_blur=None):
-    im.set_array(
-        gaussian_filter(
-            list_layers[int(slider.val)],
-            sigma=float(slider_blur.val)
-        ) if slider_blur is not None else \
-        list_layers[int(slider.val)]
-    )
-
-def update_surface(val, ax, X, Y, list_surfaces, slider, slider_blur=None, kwargs={}):
+def update_image(val, list_layers, im, slider, slider_blur=None, interpolation=True):
     index = int(slider.val)
 
+    list_layers = np.array(list_layers)
+
+    if (interpolation is True) and index != len(list_layers)-1:
+        weight = slider.val - index
+        layer = weight * list_layers[index+1] + (1 - weight) * list_layers[index]
+    else:
+        layer = list_layers[index]
+
+    im.set_array(
+        gaussian_filter(
+            layer,
+            sigma=float(slider_blur.val)
+        ) if slider_blur is not None else \
+        layer
+    )
+
+def update_surface(val, ax, X, Y, list_surfaces, slider, slider_blur=None, kwargs={}, interpolation=True):
+    index = int(slider.val)
+
+    list_surfaces = np.array(list_surfaces)
+
     ax.clear()
+
+    if (interpolation is True) and index != len(list_surfaces)-1:
+        weight = slider.val - index
+        surface = weight * list_surfaces[index+1] + (1 - weight) * list_surfaces[index]
+    else:
+        surface = list_surfaces[index]
+
     ax.plot_surface(
         X, Y,
         Z = gaussian_filter(
-            list_surfaces[int(slider.val)],
+            surface,
             sigma=float(slider_blur.val)
         ) if slider_blur is not None else \
-            np.array(list_surfaces[int(slider.val)]),
+            np.array(surface),
         **kwargs
     )
 
@@ -50,7 +69,7 @@ if __name__=="__main__":
     slider_kwargs = {
         "label":"Depth",
         "valmin":0, "valmax":len(list_layers)-1,
-        "valinit":0, "valstep":1 , "valfmt":'%d'        
+        "valinit":0, "valstep":.1 , "valfmt":'%f'        
     }
 
     slider_blur_position = [0.15, 0.01, 0.70, 0.04]
@@ -90,7 +109,7 @@ if __name__=="__main__":
     slider_2D = Slider(plt.axes(slider_position), **slider_kwargs)
     slider_blur_2D = Slider(plt.axes(slider_blur_position), **slider_blur_kwargs)
 
-    func_update_2D = lambda val: update_image(val, im, slider_2D, slider_blur_2D)
+    func_update_2D = lambda val: update_image(val, list_layers, im, slider_2D, slider_blur_2D)
     slider_2D.on_changed(func_update_2D)
     slider_blur_2D.on_changed(func_update_2D)
 
