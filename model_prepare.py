@@ -1,17 +1,16 @@
 """Saves a sampled beam layer by layer (storage space proportional to policy dimension).
-Example : python3 -m scoop model_prepare.py
+Example : python3 model_prepare.py
 
-There appears to be an issue with scoop that can make the program exit silently during evaluation. In such case, try lowering the number of workers.
-Example : python3 -m -n 5 scoop model_prepare.py"""
+FIXME: SB3's call to torch can sometimes throw an error due to multiprocessing, asking to use the 'spawn' method. However, doing so causes sub-processes to be killed (high memory use). For an unkown reason, this problem resolves eventually on its own...?"""
 
 import json
 import argparse
+import torch.multiprocessing as mp
 
-import stable_baselines3
+from stable_baselines3 import __dict__ as sb3_dict
 from stable_baselines3.common.evaluation import evaluate_policy
 
 from tqdm import tqdm
-from scoop import futures
 
 from utils_sample import *
 
@@ -36,15 +35,10 @@ def run_policy(policies, tuple_model, nb_eval):
 
 
 if __name__ == "__main__":
-
 	parser = argparse.ArgumentParser()
 	parser.add_argument(
 		'--parameters', default='parameters.json', type=str,
 		help="Path to the json parameters file."
-	)
-	parser.add_argument(
-		'--parallel', default='True', type=str,
-		help="Should the execution be parallelized?"
 	)
 	args = parser.parse_args()
 
@@ -53,14 +47,11 @@ if __name__ == "__main__":
 	parameters_training = parameters["training"]
 	parameters_beam = parameters["beam"]
 
-	algorithm = stable_baselines3.__dict__[parameters["algorithm"]]
+	algorithm = sb3_dict[parameters["algorithm"]]
 
 	input_path = "Models/{}".format(parameters["name_model"])
 	save_path = "Results/{}".format(parameters["name_result"])
 
-	map_func = futures.map if bool(args.parallel.lower() == "true") is True \
-		else map
-		
 	# Retrieving the policies
 	print("Retrieving the policies..")
 	policies = [
@@ -86,7 +77,7 @@ if __name__ == "__main__":
 	origin = policies[0]
 	combination = combination_sphere(
 		len(basis),
-		np.linalg.norm(u) / parameters_beam["nb_layers"],
+		np.linalg.norm(u),
 		parameters_beam["nb_lines"]
 	)
 	S = center_around(origin, basis, combination)
@@ -119,17 +110,18 @@ if __name__ == "__main__":
 			indices = utils.order_neighbours(landscape)[-1]
 
 		# 	Evaluating each point
-		list_results.append(list(
-			tqdm(
-				map_func(
-					run_policy,
-					landscape,
-					[(algorithm, dict_model_params)] * len(landscape),
-					[parameters_beam["nb_episodes_per_eval"]] * len(landscape),
-				),
-				desc="Line", position=1, leave=False, total=len(landscape)
-			)
-		))
+		landscape = iter(landscape)
+		with mp.Pool(processes=mp.cpu_count()) as pool:
+			list_results.append(pool.starmap(
+				run_policy,
+				[
+					(
+						iter(line),
+						(algorithm, dict_model_params),
+						parameters_beam["nb_episodes_per_eval"]
+					) for line in landscape
+				]
+			))
 	
 	#	Now that all is done, we order the landscapes coherently
 	print("Re-organizing lines")

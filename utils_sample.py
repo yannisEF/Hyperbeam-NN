@@ -95,7 +95,9 @@ def combination_sphere(dim, size, N):
 
 def vector_boxmuller(N, dim):
     """Returns N points sampled using Box-Muller sampling rule of dim-dimensional balls."""
-    return [0] + sorted(list(np.random.random(N-1) ** (1/dim)))
+    # return [0] + sorted(list(np.random.random(N-1) ** (1/dim)))
+    r = np.random.normal(scale=1, size=N-1)
+    return [0] + sorted(list((abs(r) / np.linalg.norm(r))))
 
 def sample_landscape(L, N):
     """
@@ -171,7 +173,7 @@ if __name__=="__main__":
     if dimension == 3:
         nb_layers = 3
         nb_lines_per_layer = 20
-        pixels_per_line = 6
+        pixels_per_line = 50
 
     # We have a random vector corresponding to the learning between two policies
     u = 3 * np.random.random(dimension)
@@ -180,28 +182,28 @@ if __name__=="__main__":
 
     # We set up a sampling rule for that hyperplane
     origin1 = np.zeros(len(u))
-    combination1 = combination_random(len(basis), nb_lines_per_layer)
-    S1 = center_around(origin1, basis, combination1)
-
-    #   ... for the example, we show other sampling rules
-    origin2 = 3 * np.eye(len(u))[0]
-    combination2 = combination_sphere(
+    combination1 = combination_sphere(
         len(basis),
         np.linalg.norm(u)/nb_layers,
         nb_lines_per_layer
     )
-    S2 = center_around(origin2, basis, combination2)
+    S1 = center_around(origin1, basis, combination1)
+
+    #   ... for the example, we show other sampling rules
+    # origin2 = 3 * np.eye(len(u))[0]
+    # combination2 = combination_random(len(basis), nb_lines_per_layer)
+    # S2 = center_around(origin2, basis, combination2)
 
     # Now we sample the beam created by shifting our hyperplane by u
     beam1 = sample_beam(S1, u, nb_layers)
-    beam2 = sample_beam(S2, u, nb_layers)
+    # beam2 = sample_beam(S2, u, nb_layers)
 
     # For each of point, we trace a line to the center of the layer
     #   ... this is because the hyperplane is N-th dimensional
     #   ... and we have to use another technique later to visualize
     #   ... these N dimensions in 2D or 3D.
     list_landscape1 = get_landscape_beam(beam1, pixels_per_line)
-    list_landscape2 = get_landscape_beam(beam2, pixels_per_line)
+    # list_landscape2 = get_landscape_beam(beam2, pixels_per_line)
 
     # We are now supposed to evaluate each of our landscapes on any environment!
     #   ... With can use their fitness as a value for a pixel in an image.
@@ -231,20 +233,23 @@ if __name__=="__main__":
                 color=color
             )
 
-        for origin in [origin1, origin2]:
+        # for origin in [origin1, origin2]:
+        for origin in [origin1]:
             plot_vector(ax, origin, u, color=color_vector)
 
             for b in basis:
                 plot_vector(ax, origin, b, color=color_basis)
 
-        for beam in [beam1, beam2]:
+        # for beam in [beam1, beam2]:
+        for beam in [beam1]:
             for surface in beam:
                 ax.scatter(
                     surface[:,0], surface[:,1], surface[:,2],
                     color=color_surface, alpha=alpha_surface
                 )
         
-        for list_landscape in [list_landscape1, list_landscape2]:
+        # for list_landscape in [list_landscape1, list_landscape2]:
+        for list_landscape in [list_landscape1]:
             for layer_landscape in list_landscape:
                 for line in layer_landscape:
                     ax.scatter(

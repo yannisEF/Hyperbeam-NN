@@ -19,7 +19,7 @@
         }
     },
 
-    "name_result":"test",
+    "name_result":"test2",
     "beam":
     {
         "vector":
@@ -29,8 +29,8 @@
         },
 
         "nb_layers":3,
-        "nb_lines":50,
-        "nb_columns":50,
+        "nb_lines":25,
+        "nb_columns":25,
 
         "nb_episodes_per_eval":5
     }
