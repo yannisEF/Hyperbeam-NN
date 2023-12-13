@@ -34,7 +34,6 @@ def run_policy(policies, tuple_model, nb_eval):
 
 	return line
 
-
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument(
@@ -79,7 +78,7 @@ if __name__ == "__main__":
 	combination = combination_sphere(
 		len(basis),
 		# np.linalg.norm(u) / parameters_beam["nb_layers"], # TODO: test ranges
-		100,
+		200,
 		parameters_beam["nb_lines"]
 	)
 	S = center_around(origin, basis, combination)

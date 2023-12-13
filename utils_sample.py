@@ -176,8 +176,10 @@ if __name__=="__main__":
     # Use 3D for visualization
     #   /!\ The ax XYZ limits can change the perception of angles and ditances
     if dimension == 3:
+        np.random.seed(12121)
+
         nb_layers = 3
-        nb_lines_per_layer = 50
+        nb_lines_per_layer = 100
         pixels_per_line = 6
 
     # We have a random vector corresponding to the learning between two policies
@@ -237,29 +239,77 @@ if __name__=="__main__":
                 [origin[2], origin[2] + u[2]],
                 color=color
             )
+        
+        def line_bottom(ax, point, color, text=""):
+            alpha = .6
 
+            ax.plot(
+                [point[0], point[0]],
+                [point[1], point[1]],
+                [point[2], -1.1020904882813967],
+                color=color,
+                alpha=alpha,
+                linestyle="dotted"
+            )
+
+            offset = .1
+            ax.plot(
+                [point[0]-offset, point[0]+offset],
+                [point[1]+offset, point[1]-offset],
+                [-1.1020904882813967, -1.1020904882813967],
+                color=color,
+                alpha=alpha,
+                linestyle="dashed"
+            )
+
+            ax.plot(
+                [point[0]-offset, point[0]+offset],
+                [point[1]-offset, point[1]+offset],
+                [-1.1020904882813967, -1.1020904882813967],
+                color=color,
+                alpha=alpha,
+                linestyle="dashed"
+            )
+
+            ax.text(
+                *(np.array([point[0], point[1], -1.1020904882813967]) - 2*offset),
+                s = text, fontsize = 18
+            )
         # for origin in [origin1, origin2]:
         for origin in [origin1]:
             plot_vector(ax, origin, u, color=color_vector)
 
+            line_bottom(ax, origin, color="black", text="A")
+            line_bottom(ax, origin + u, color="black", text="B")
+
             for b in basis:
                 plot_vector(ax, origin, b, color=color_basis)
 
-        # for beam in [beam1, beam2]:
+        # # for beam in [beam1, beam2]:
         for beam in [beam1]:
-            for surface in beam:
+            for i, surface in enumerate(beam):
                 ax.scatter(
                     surface[:,0], surface[:,1], surface[:,2],
                     color=color_surface, alpha=alpha_surface
                 )
+
+                # line_bottom(ax, surface[0], color="black")
         
-        # for list_landscape in [list_landscape1, list_landscape2]:
+        # # for list_landscape in [list_landscape1, list_landscape2]:
         for list_landscape in [list_landscape1]:
-            for layer_landscape in list_landscape:
+            for i, layer_landscape in enumerate(list_landscape):
                 for line in layer_landscape:
                     ax.scatter(
                         line[:,0], line[:,1], line[:,2],
                         color=color_landscape, alpha=alpha_landscape
-                    ) 
+                    )
+
+        ax.set_box_aspect((1,1,1))
+        plt.tight_layout()
+        
+        ax.set_xlim(-1.30679382946117, 3.3597140779077113)
+        ax.set_ylim(-1.3633625025125786, 2.967558224305686)
+        ax.set_zlim(-1.1020904882813967, 3.9463500196573147)
+        ax.view_init(elev=15., azim=-105.)
 
         plt.show()

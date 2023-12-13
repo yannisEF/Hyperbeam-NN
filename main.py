@@ -37,6 +37,8 @@ def update_surface(val, ax, X, Y, list_surfaces, slider, slider_blur=None, kwarg
     list_surfaces = np.array(list_surfaces)
 
     ax.clear()
+    ax.set_xticks([])
+    ax.set_yticks([])
 
     if (interpolation is True) and index != len(list_surfaces)-1:
         weight = slider.val - index
@@ -104,6 +106,8 @@ if __name__=="__main__":
 
     # 2D plot
     fig_2D, ax_2D = plt.subplots(figsize=(8, 8))
+    ax_2D.set_xticks([])
+    ax_2D.set_yticks([])
 
     im=ax_2D.imshow(
         list_layers[0],
@@ -126,6 +130,8 @@ if __name__=="__main__":
     # 3D plot
     fig_3D = plt.figure(figsize=(8,8))
     ax_3D = fig_3D.add_subplot(projection='3d')
+    ax_3D.set_xticks([])
+    ax_3D.set_yticks([])
 
     fig_3D.colorbar(
         cm.ScalarMappable(norm=norm, cmap=colormap),
