@@ -169,18 +169,16 @@ if __name__=="__main__":
 
     dimension = 3
 
-    nb_layers = 25
-    nb_lines_per_layer = 50
-    pixels_per_line = 50
+    nb_layers = 3
+    nb_lines_per_layer = 25
+    pixels_per_line = 6
 
     # Use 3D for visualization
-    #   /!\ The ax XYZ limits can change the perception of angles and ditances
+    #   /!\ The ax XYZ limits can change the perception of angles and distances
     if dimension == 3:
+        # Fixing the seed for 3D to 12121
+        #   ... we hard coded some visualization variables according to this seed
         np.random.seed(12121)
-
-        nb_layers = 3
-        nb_lines_per_layer = 100
-        pixels_per_line = 6
 
     # We have a random vector corresponding to the learning between two policies
     u = 3 * np.random.random(dimension)
@@ -191,7 +189,7 @@ if __name__=="__main__":
     origin1 = np.zeros(len(u))
     combination1 = combination_sphere(
         len(basis),
-        np.linalg.norm(u)/nb_layers,
+        np.linalg.norm(u) / 3, # Random value
         nb_lines_per_layer
     )
     S1 = center_around(origin1, basis, combination1)
@@ -240,6 +238,7 @@ if __name__=="__main__":
                 color=color
             )
         
+        # REMOVE IF NO SEEDING
         def line_bottom(ax, point, color, text=""):
             alpha = .6
 
@@ -275,12 +274,16 @@ if __name__=="__main__":
                 *(np.array([point[0], point[1], -1.1020904882813967]) - 2*offset),
                 s = text, fontsize = 18
             )
+        # ---
+
         # for origin in [origin1, origin2]:
         for origin in [origin1]:
             plot_vector(ax, origin, u, color=color_vector)
 
+            # REMOVE IF NO SEEDING
             line_bottom(ax, origin, color="black", text="A")
             line_bottom(ax, origin + u, color="black", text="B")
+            # ---
 
             for b in basis:
                 plot_vector(ax, origin, b, color=color_basis)
@@ -307,9 +310,11 @@ if __name__=="__main__":
         ax.set_box_aspect((1,1,1))
         plt.tight_layout()
         
+        # REMOVE IF NO SEEDING
         ax.set_xlim(-1.30679382946117, 3.3597140779077113)
         ax.set_ylim(-1.3633625025125786, 2.967558224305686)
         ax.set_zlim(-1.1020904882813967, 3.9463500196573147)
         ax.view_init(elev=15., azim=-105.)
+        # ---
 
         plt.show()

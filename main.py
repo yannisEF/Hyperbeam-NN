@@ -1,3 +1,6 @@
+"""Shows the computed hyper-beam .pkl file in 2D and 3D.
+Example: python3 main.py --to_show wide_test"""
+
 import pickle
 import argparse
 
@@ -130,6 +133,7 @@ if __name__=="__main__":
     # 3D plot
     fig_3D = plt.figure(figsize=(8,8))
     ax_3D = fig_3D.add_subplot(projection='3d')
+
     ax_3D.set_xticks([])
     ax_3D.set_yticks([])
 
@@ -162,4 +166,6 @@ if __name__=="__main__":
     slider_3D.on_changed(func_update_3D)
     slider_blur_3D.on_changed(func_update_3D)
 
+    fig_2D.tight_layout()
+    fig_3D.tight_layout()
     plt.show()
