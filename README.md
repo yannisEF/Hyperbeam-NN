@@ -5,9 +5,9 @@ An interactive hyper-beam based visualization method of n-th dimensional reward 
 Fully compatible with [Stable-baselines 3](https://stable-baselines3.readthedocs.io/en/master/)'s policies.
 
 <p align="middle">
-  <img src="https://github.com/yannisEF/NNMRI/assets/49323355/4f972e98-1305-4012-89c3-8dffedbe390a" width="300" />
-  <img src="https://github.com/yannisEF/NNMRI/assets/49323355/4fdc8c50-778e-4f0c-9404-47002ce26722" width="300" /> 
-  <img src="https://github.com/yannisEF/NNMRI/assets/49323355/dddbba50-51f5-499c-9a6d-de9584de04d2" width="300" /> 
+  <img src="https://github.com/yannisEF/NNMRI/assets/49323355/4f972e98-1305-4012-89c3-8dffedbe390a" width="200" />
+  <img src="https://github.com/yannisEF/NNMRI/assets/49323355/4fdc8c50-778e-4f0c-9404-47002ce26722" width="200" /> 
+  <img src="https://github.com/yannisEF/NNMRI/assets/49323355/dddbba50-51f5-499c-9a6d-de9584de04d2" width="200" /> 
 </p>
 
 Manipulate a 3D example of the tool in the [utils_sample.py](./utils_sample.py) file.
