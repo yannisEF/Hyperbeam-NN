@@ -1,4 +1,4 @@
-# NNMRI
+# Hyperbeam NN
 
 An interactive hyper-beam based visualization method of n-th dimensional reward landscapes, fully compatible with [Stable-baselines 3](https://stable-baselines3.readthedocs.io/en/master/)'s policies.
 
