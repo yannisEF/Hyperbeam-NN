@@ -1,8 +1,6 @@
 # NNMRI
 
-An interactive hyper-beam based visualization method of n-th dimensional reward landscapes. See the [project report](./BCS541_ELRHARBI-FLEURY_YANNIS.pdf) for more details.
-
-Fully compatible with [Stable-baselines 3](https://stable-baselines3.readthedocs.io/en/master/)'s policies.
+An interactive hyper-beam based visualization method of n-th dimensional reward landscapes, fully compatible with [Stable-baselines 3](https://stable-baselines3.readthedocs.io/en/master/)'s policies.
 
 <p align="middle">
   <img src="https://github.com/yannisEF/NNMRI/assets/49323355/4f972e98-1305-4012-89c3-8dffedbe390a" width="200" />
@@ -10,7 +8,7 @@ Fully compatible with [Stable-baselines 3](https://stable-baselines3.readthedocs
   <img src="https://github.com/yannisEF/NNMRI/assets/49323355/dddbba50-51f5-499c-9a6d-de9584de04d2" width="200" /> 
 </p>
 
-Manipulate a 3D example of the tool in the [utils_sample.py](./utils_sample.py) file.
+Manipulate a 3D example of the tool in the [utils_sample.py](./utils_sample.py) file, see the [project report](./BCS541_ELRHARBI-FLEURY_YANNIS.pdf) for more details.
 
 ```bash
 python3 utils_sample.py
